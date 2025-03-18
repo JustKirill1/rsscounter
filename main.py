@@ -125,7 +125,7 @@ class ResourceApp(QtWidgets.QWidget):
                 }
                 QComboBox QAbstractItemView {
                     background-color: #3a3a3a;  /* Темный фон выпадающего списка */
-                    color: #f5f5f5;             /* Белый текст */
+                    color: #f5f5f4;             /* Белый текст */
                     selection-background-color: #4a90e2;  /* Синий фон выбранного элемента */
                     selection-color: #ffffff;   /* Белый текст выбранного элемента */
                     border: 2px solid #4a90e2;  /* Синяя рамка */
