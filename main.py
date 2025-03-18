@@ -53,6 +53,7 @@ class ResourceApp(QtWidgets.QWidget):
         self.timer.start(10)
 
     def initUI(self):
+        self.setWindowIcon(QtGui.QIcon('icon.png'))
         self.setWindowTitle("Resource Manager")
         self.setStyleSheet("""
         QWidget {
