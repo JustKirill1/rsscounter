@@ -46,7 +46,7 @@ class ResourceManager:
 class ResourceApp(QtWidgets.QWidget):
     def __init__(self, window_title):
         super().__init__()
-        self.window_title = window_title
+        self.target_title = window_title
         self.initUI()
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_position)
@@ -157,12 +157,28 @@ class ResourceApp(QtWidgets.QWidget):
         self.setWindowOpacity(0.75)
 
     def update_position(self):
-        target_windows = gw.getWindowsWithTitle(self.window_title)
+        if not hasattr(self, "target_title") or not self.target_title:
+            print("Ошибка: target_title не задан")
+            return
+
+        target_windows = gw.getWindowsWithTitle(self.target_title)
+        active_window = gw.getActiveWindow()
+
         if target_windows:
+
             target_window = target_windows[0]
             self.move(target_window.left + 5, target_window.top + int(target_window.height / 1.85))
-            if not self.isVisible():
-                self.show()
+
+            is_active = active_window and (
+                        active_window.title == self.target_title or active_window.title == "OSROKBOT" or active_window.title == "python3")
+
+            self.setWindowFlags(
+                self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint if is_active else self.windowFlags() & ~QtCore.Qt.WindowStaysOnTopHint)
+
+
+            self.setVisible(bool(is_active))
+
+            self.update()
 
     def take_screenshot(self):
         # Загружаем изображение крестика (шаблон)
