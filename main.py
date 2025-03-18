@@ -1,9 +1,12 @@
-from PyQt5 import QtWidgets, QtGui, QtCore
 import sys
 import pyautogui
 import pytesseract
 from PIL import Image
 import re
+import cv2
+import numpy as np
+from PyQt5 import QtWidgets, QtGui, QtCore
+import pygetwindow as gw
 
 
 class Account:
@@ -41,16 +44,16 @@ class ResourceManager:
 
 
 class ResourceApp(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, window_title):
         super().__init__()
+        self.window_title = window_title
         self.initUI()
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update_position)
+        self.timer.start(10)
 
     def initUI(self):
         self.setWindowTitle("Resource Manager")
-        self.setGeometry(100, 100, 400, 300)
-        self.target_title = "Rise of Kingdoms"
-        self.timer = QtCore.QTimer(self)
-        # Colors and styles
         self.setStyleSheet("""
         QWidget {
             background-color: #2a2a2a;
@@ -99,8 +102,35 @@ class ResourceApp(QtWidgets.QWidget):
         """)
 
         self.account_selector = QtWidgets.QComboBox(self)
-        self.account_selector.addItems(["JustKirill", "FarmKirill", "KirillFarm1", "KirillFarm2"])
-
+        self.account_selector.addItems(["JustKirill", "KirillFarm0", "KirillFarm1", "KirillFarm2", "KirillFarm3", "KirillFarm4" ])
+        self.account_selector.setStyleSheet("""
+                QComboBox {
+                    background-color: #3a3a3a;  /* Темный фон */
+                    color: #f5f5f5;             /* Белый текст */
+                    border: 2px solid #4a90e2;  /* Синяя рамка */
+                    border-radius: 8px;         /* Закругленные углы */
+                    padding: 5px;               /* Отступы */
+                    font-size: 14px;            /* Размер шрифта */
+                }
+                QComboBox::drop-down {
+                    background-color: #2a2a2a;  /* Темный фон для стрелки */
+                    border: 2px solid #4a90e2;  /* Синяя рамка */
+                    border-radius: 5px;         /* Закругленные углы */
+                    width: 20px;               /* Ширина стрелки */
+                }
+                QComboBox::down-arrow {
+                    image: url(Media/UI/down_arrow.svg);  /* Иконка стрелки */
+                    width: 10px;
+                    height: 10px;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #3a3a3a;  /* Темный фон выпадающего списка */
+                    color: #f5f5f5;             /* Белый текст */
+                    selection-background-color: #4a90e2;  /* Синий фон выбранного элемента */
+                    selection-color: #ffffff;   /* Белый текст выбранного элемента */
+                    border: 2px solid #4a90e2;  /* Синяя рамка */
+                }
+            """)
         self.screenshot_button = QtWidgets.QPushButton("Сделать скриншот", self)
         self.screenshot_button.clicked.connect(self.take_screenshot)
 
@@ -121,49 +151,145 @@ class ResourceApp(QtWidgets.QWidget):
         layout.addWidget(self.reset_button)
         self.setLayout(layout)
 
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setWindowOpacity(0.75)
+
+    def update_position(self):
+        target_windows = gw.getWindowsWithTitle(self.window_title)
+        if target_windows:
+            target_window = target_windows[0]
+            self.move(target_window.left + 5, target_window.top + int(target_window.height / 1.85))
+            if not self.isVisible():
+                self.show()
+
     def take_screenshot(self):
+        # Загружаем изображение крестика (шаблон)
+        cross_image = cv2.imread("cross.png", cv2.IMREAD_GRAYSCALE)
+        if cross_image is None:
+            QtWidgets.QMessageBox.critical(self, "Ошибка", "Файл cross.png не найден или поврежден.")
+            return
+
+        # Делаем скриншот и преобразуем его в градации серого
         screenshot = pyautogui.screenshot()
-        screenshot.save("screenshot.png")
-        self.extract_resources("screenshot.png")
-        QtWidgets.QMessageBox.information(self, "Скриншот", "Скриншот сохранен и обработан!")
+        screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)  # Преобразуем в BGR (формат OpenCV)
+        screenshot_gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)  # Преобразуем в градации серого
+
+        # Ищем крестик на скриншоте
+        result = cv2.matchTemplate(screenshot_gray, cross_image, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+        # Если уверенность совпадения высокая, обрезаем скриншот
+        if max_val > 0.8:  # Порог уверенности (можно настроить)
+            h, w = cross_image.shape
+            cross_x, cross_y = max_loc
+
+            # Определяем область для обрезки
+            crop_x1 = cross_x - 1200  # Отступ от крестика
+            crop_y1 = cross_y - 100  # Отступ от крестика
+            crop_x2 = crop_x1 + 1200  # Ширина области
+            crop_y2 = crop_y1 + 800  # Высота области
+
+            # Проверяем, чтобы координаты не выходили за пределы изображения
+            height, width = screenshot_gray.shape
+            crop_x1 = max(0, crop_x1)
+            crop_y1 = max(0, crop_y1)
+            crop_x2 = min(width, crop_x2)
+            crop_y2 = min(height, crop_y2)
+
+            # Обрезаем скриншот
+            cropped_screenshot = screenshot[crop_y1:crop_y2, crop_x1:crop_x2]
+            cv2.imwrite("cropped_screenshot.png", cropped_screenshot)
+
+            # Обрабатываем обрезанный скриншот
+            resources = self.extract_resources("cropped_screenshot.png")
+
+            # Отображаем распознанные ресурсы в QMessageBox
+            resource_message = "\n".join(
+                [f"{key.capitalize()}: {value / 1000000:.2f}М" for key, value in resources.items()])
+            QtWidgets.QMessageBox.information(
+                self,
+                "Скриншот",
+                f"Скриншот сохранен и обработан!\n\nРаспознанные ресурсы:\n{resource_message}"
+            )
+
+            # Добавляем ресурсы на аккаунт
+            account_name = self.account_selector.currentText()
+            for account in resource_manager.accounts:
+                if account.name == account_name:
+                    account.add_resources(resources["food"], resources["wood"], resources["stone"], resources["gold"])
+                    print(f"Ресурсы добавлены на аккаунт {account_name}: {account.resources}")
+                    break
+        else:
+            QtWidgets.QMessageBox.critical(self, "Ошибка", "Крестик не найден на скриншоте.")
 
     def extract_resources(self, image_path):
-        image = Image.open(image_path)
-        text = pytesseract.image_to_string(image, lang="eng")
-        print("Распознанный текст:\n", text)
+        try:
+            # Открываем изображение
+            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)  # Загружаем в градациях серого
+            if image is None:
+                print("Ошибка: Не удалось загрузить изображение.")
+                return {"food": 0, "wood": 0, "stone": 0, "gold": 0}
 
-        resources = {"food": 0, "wood": 0, "stone": 0, "gold": 0}
-        lines = text.split("\n")
-        resource_keys = {"Food": "food", "Wood": "wood", "Stone": "stone", "Gold": "gold"}
+            # Увеличиваем контрастность
+            _, binary_image = cv2.threshold(image, 200, 255, cv2.THRESH_BINARY)
 
-        for line in lines:
-            for key in resource_keys:
-                if key in line:
-                    numbers = re.findall(r"(\d+(\.\d+)?M?)", line)  # Ищем числа
-                    if numbers:
-                        last_number = numbers[-1][0]  # Берём последнее число
-                        try:
-                            value = float(last_number.replace("M", "")) * 1_000_000 if "M" in last_number else float(
-                                last_number)
-                            resources[resource_keys[key]] = value
-                        except ValueError:
-                            print(f"Ошибка обработки строки: {line}")
-                    else:
-                        print(f"Не найдено число в строке: {line}")
+            # Сохраняем обработанное изображение для отладки
+            cv2.imwrite("processed_screenshot.png", binary_image)
 
-        print("Извлечённые ресурсы:", resources)
+            # Распознаем текст с помощью pytesseract
+            custom_config = r'--oem 3 --psm 6'  # Настройки для улучшения распознавания
+            text = pytesseract.image_to_string(binary_image, config=custom_config, lang="eng")
+            print("Распознанный текст:\n", text)
 
-        account_name = self.account_selector.currentText()
-        for account in resource_manager.accounts:
-            if account.name == account_name:
-                account.add_resources(resources["food"], resources["wood"], resources["stone"], resources["gold"])
-                print(f"Ресурсы добавлены на аккаунт {account_name}: {account.resources}")
-                break
+            # Если текст пустой, выводим предупреждение
+            if not text.strip():
+                print("Предупреждение: Текст на изображении не распознан.")
+                return {"food": 0, "wood": 0, "stone": 0, "gold": 0}
+
+            resources = {"food": 0, "wood": 0, "stone": 0, "gold": 0}
+            lines = text.split("\n")
+            resource_keys = {"Food": "food", "Wood": "wood", "Stone": "stone", "Gold": "gold"}
+
+            # Обрабатываем строки
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Ищем название ресурса и числа в строке
+                for key in resource_keys:
+                    if key in line:
+                        # Ищем числа в строке (например, "141.1M" или "382.5M")
+                        numbers = re.findall(r"(\d+(?:\.\d+)?(?:M|K)?)", line)
+                        if len(numbers) >= 2:  # Проверяем, что есть хотя бы два числа
+                            # Берем второе число (например, "382.5M")
+                            second_number = numbers[1]
+                            try:
+                                # Преобразуем число в float (учитываем "M" и "K")
+                                if "M" in second_number:
+                                    value = float(second_number.replace("M", "")) * 1_000_000
+                                elif "K" in second_number:
+                                    value = float(second_number.replace("K", "")) * 1_000
+                                else:
+                                    value = float(second_number)
+                                resources[resource_keys[key]] = value
+                            except ValueError as e:
+                                print(f"Ошибка обработки числа в строке: {line}. Ошибка: {e}")
+                        else:
+                            print(f"Не найдено второе число в строке: {line}")
+
+            print("Извлечённые ресурсы:", resources)
+            return resources
+
+        except Exception as e:
+            print(f"Ошибка при обработке изображения: {e}")
+            return {"food": 0, "wood": 0, "stone": 0, "gold": 0}
 
     def calculate_resources(self):
         resource_manager.update_total_resources()
         message = "\n".join(
-            [f"{key.capitalize()}: {value/1000000:.2f}M" for key, value in resource_manager.total_resources.items()])
+            [f"{key.capitalize()}: {value / 1000000:.2f}М" for key, value in resource_manager.total_resources.items()])
         QtWidgets.QMessageBox.information(self, "Итоговые ресурсы", message)
 
     def change_tax(self):
@@ -185,8 +311,11 @@ class ResourceApp(QtWidgets.QWidget):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     resource_manager = ResourceManager()
-    for name, rate in {"JustKirill": 1, "FarmKirill": 0.81, "KirillFarm1": 0.81, "KirillFarm2": 0.78}.items():
+    for name, rate in {"JustKirill": 1, "KirillFarm0": 0.81, "KirillFarm1": 0.81, "KirillFarm2": 0.81,
+                       "KirillFarm3": 0.81, "KirillFarm4": 0.81}.items():
         resource_manager.add_account(Account(name, rate))
-    ex = ResourceApp()
+
+    window_title = "Rise of Kingdoms"
+    ex = ResourceApp(window_title)
     ex.show()
     sys.exit(app.exec_())
