@@ -232,10 +232,10 @@ class ResourceApp(QtWidgets.QWidget):
             cross_x, cross_y = max_loc
 
             # Определяем область для обрезки
-            crop_x1 = cross_x - 1200  # Отступ от крестика
-            crop_y1 = cross_y - 100  # Отступ от крестика
-            crop_x2 = crop_x1 + 1200  # Ширина области
-            crop_y2 = crop_y1 + 800  # Высота области
+            crop_x1 = cross_x - 1000  # Отступ от крестика
+            crop_y1 = cross_y + 200  # Отступ от крестика
+            crop_x2 = crop_x1 + 1000  # Ширина области
+            crop_y2 = crop_y1 + 400  # Высота области
 
             # Проверяем, чтобы координаты не выходили за пределы изображения
             height, width = screenshot_gray.shape
