@@ -53,7 +53,7 @@ class ResourceApp(QtWidgets.QWidget):
         self.timer.start(10)
 
     def initUI(self):
-        self.setWindowIcon(QtGui.QIcon('icon.png'))
+        self.setWindowIcon(QtGui.QIcon('Media/UI/prog_icon.png'))
         self.setWindowTitle("Resource Manager")
         self.setStyleSheet("""
         QWidget {
@@ -166,7 +166,7 @@ class ResourceApp(QtWidgets.QWidget):
 
     def take_screenshot(self):
         # Загружаем изображение крестика (шаблон)
-        cross_image = cv2.imread("cross.png", cv2.IMREAD_GRAYSCALE)
+        cross_image = cv2.imread("Media/func/cross.png", cv2.IMREAD_GRAYSCALE)
         if cross_image is None:
             QtWidgets.QMessageBox.critical(self, "Ошибка", "Файл cross.png не найден или поврежден.")
             return
