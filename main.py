@@ -7,7 +7,11 @@ import cv2
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 import pygetwindow as gw
+import configparser
+import os
 
+# Путь к файлу setting.ini
+SETTINGS_FILE = "setting.ini"
 
 class Account:
     def __init__(self, name, tax_rate):
@@ -23,6 +27,7 @@ class Account:
 
     def update_tax(self, new_tax):
         self.tax_rate = new_tax
+        save_tax_to_ini(self.name, new_tax)
 
 
 class ResourceManager:
@@ -41,6 +46,24 @@ class ResourceManager:
         for account in self.accounts:
             account.resources = {"food": 0, "wood": 0, "stone": 0, "gold": 0}
         self.total_resources = {"food": 0, "wood": 0, "stone": 0, "gold": 0}
+
+
+def load_tax_from_ini(account_name):
+    config = configparser.ConfigParser()
+    config.read(SETTINGS_FILE)
+    if "Taxes" in config and account_name in config["Taxes"]:
+        return float(config["Taxes"][account_name])
+    return 1.0  # Значение по умолчанию, если налог не найден
+
+
+def save_tax_to_ini(account_name, tax_rate):
+    config = configparser.ConfigParser()
+    config.read(SETTINGS_FILE)
+    if "Taxes" not in config:
+        config["Taxes"] = {}
+    config["Taxes"][account_name] = str(tax_rate)
+    with open(SETTINGS_FILE, "w") as configfile:
+        config.write(configfile)
 
 
 class ResourceApp(QtWidgets.QWidget):
@@ -171,6 +194,7 @@ class ResourceApp(QtWidgets.QWidget):
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setWindowOpacity(0.75)
+
     def update_position(self):
         target_windows = gw.getWindowsWithTitle(self.window_title)
         if target_windows:
@@ -309,10 +333,10 @@ class ResourceApp(QtWidgets.QWidget):
         QtWidgets.QMessageBox.information(self, "Итоговые ресурсы", message)
 
     def change_tax(self):
-        new_tax, ok = QtWidgets.QInputDialog.getDouble(self, "Изменение налога", "Введите новый налог:", 1.0, 0.1, 1.0,
-                                                       2)
+        account_name = self.account_selector.currentText()
+        current_tax = load_tax_from_ini(account_name)
+        new_tax, ok = QtWidgets.QInputDialog.getDouble(self, "Изменение налога", "Введите новый налог:", current_tax, 0.1, 1.0, 2)
         if ok:
-            account_name = self.account_selector.currentText()
             for account in resource_manager.accounts:
                 if account.name == account_name:
                     account.update_tax(new_tax)
@@ -327,9 +351,11 @@ class ResourceApp(QtWidgets.QWidget):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     resource_manager = ResourceManager()
-    for name, rate in {"JustKirill": 1, "KirillFarm0": 0.81, "KirillFarm1": 0.81, "KirillFarm2": 0.81,
-                       "KirillFarm3": 0.81, "KirillFarm4": 0.81}.items():
-        resource_manager.add_account(Account(name, rate))
+
+    # Загружаем налоги из setting.ini
+    for name in ["JustKirill", "KirillFarm0", "KirillFarm1", "KirillFarm2", "KirillFarm3", "KirillFarm4"]:
+        tax_rate = load_tax_from_ini(name)
+        resource_manager.add_account(Account(name, tax_rate))
 
     window_title = "Rise of Kingdoms"
     ex = ResourceApp(window_title)
