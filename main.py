@@ -182,7 +182,7 @@ class ResourceApp(QtWidgets.QWidget):
 
         # Настройка размера кнопок
         button_size = QtCore.QSize(64, 64)  # Размер кнопок
-        for button in [self.screenshot_button, self.calculate_button, self.tax_button, self.reset_button]:
+        for button in [self.screenshot_button, self.calculate_button, self.tax_button, self.reset_button, self.graph_button]:
             button.setIconSize(button_size)
             button.setFixedSize(button_size)
 

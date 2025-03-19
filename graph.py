@@ -1,7 +1,7 @@
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -17,6 +17,7 @@ class GraphWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # Создаем вкладки
+        self.setWindowIcon(QtGui.QIcon('Media/UI/graph.png'))
         self.tabs = QtWidgets.QTabWidget(self)
 
         # Добавляем вкладки для каждого аккаунта
