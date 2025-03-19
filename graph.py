@@ -101,7 +101,7 @@ def load_data():
     return df
 
 
-if __name__ == "__main__":
+def main():
     # Загружаем данные
     df = load_data()
 
@@ -114,3 +114,5 @@ if __name__ == "__main__":
 
     # Запускаем приложение
     sys.exit(app.exec_())
+if __name__ == "__main__":
+    main()

@@ -10,6 +10,7 @@ import pygetwindow as gw
 import configparser
 import os
 import csv_saver
+from graph import GraphWindow, load_data
 # Путь к файлу setting.ini
 SETTINGS_FILE = "setting.ini"
 
@@ -174,6 +175,11 @@ class ResourceApp(QtWidgets.QWidget):
         self.reset_button.setIcon(QtGui.QIcon("Media/UI/reset.png"))
         self.reset_button.clicked.connect(self.reset_resources)
 
+        self.graph_button = QtWidgets.QPushButton(self)
+        self.graph_button.setIcon(QtGui.QIcon("Media/UI/graph.png"))  # Иконка для кнопки
+        self.graph_button.clicked.connect(self.open_graphs)
+        self.graph_button.setToolTip("Открыть графики ресурсов")
+
         # Настройка размера кнопок
         button_size = QtCore.QSize(64, 64)  # Размер кнопок
         for button in [self.screenshot_button, self.calculate_button, self.tax_button, self.reset_button]:
@@ -187,6 +193,7 @@ class ResourceApp(QtWidgets.QWidget):
         layout.addWidget(self.calculate_button, 1, 1)
         layout.addWidget(self.tax_button, 2, 0)
         layout.addWidget(self.reset_button, 2, 1)
+        layout.addWidget(self.graph_button, 3, 0)
 
         self.setLayout(layout)
 
@@ -346,7 +353,16 @@ class ResourceApp(QtWidgets.QWidget):
     def reset_resources(self):
         resource_manager.reset_resources()
         QtWidgets.QMessageBox.information(self, "Сброс", "Ресурсы сброшены!")
+    def open_graphs(self):
+        """
+        Открывает окно с графиками ресурсов.
+        """
+        # Загружаем данные
+        df = load_data()
 
+        # Создаем окно с графиками
+        self.graph_window = GraphWindow(df)
+        self.graph_window.show()
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
