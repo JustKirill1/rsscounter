@@ -145,7 +145,7 @@ class ResourceApp(QtWidgets.QWidget):
                    width: 20px;               /* Ширина стрелки */
                }
                QComboBox::down-arrow {
-                   image: url(Media/UI/down_arrow.svg);  /* Иконка стрелки */
+                   image: url(Media/UI/down_arrow.png);  /* Иконка стрелки */
                    width: 10px;
                    height: 10px;
                }
@@ -254,19 +254,38 @@ class ResourceApp(QtWidgets.QWidget):
             # Отображаем распознанные ресурсы в QMessageBox
             resource_message = "\n".join(
                 [f"{key.capitalize()}: {value / 1000000:.2f}М" for key, value in resources.items()])
-            QtWidgets.QMessageBox.information(
+            reply = QtWidgets.QMessageBox.question(
                 self,
-                "Скриншот",
-                f"Скриншот сохранен и обработан!\n\nРаспознанные ресурсы:\n{resource_message}"
+                "Подтверждение",
+                f"Скриншот обработан. Распознанные ресурсы:\n{resource_message}\n\nДанные верны?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.Yes
             )
 
+            # Если пользователь подтвердил, добавляем ресурсы
+            if reply == QtWidgets.QMessageBox.Yes:
+                account_name = self.account_selector.currentText()
+                for account in resource_manager.accounts:
+                    if account.name == account_name:
+                        account.add_resources(resources["food"], resources["wood"], resources["stone"],
+                                              resources["gold"])
+                        print(f"Ресурсы добавлены на аккаунт {account_name}: {account.resources}")
+                        break
+            else:
+                pass
+            # QtWidgets.QMessageBox.information(
+            #     self,
+            #     "Скриншот",
+            #     f"Скриншот сохранен и обработан!\n\nРаспознанные ресурсы:\n{resource_message}"
+            # )
+
             # Добавляем ресурсы на аккаунт
-            account_name = self.account_selector.currentText()
-            for account in resource_manager.accounts:
-                if account.name == account_name:
-                    account.add_resources(resources["food"], resources["wood"], resources["stone"], resources["gold"])
-                    print(f"Ресурсы добавлены на аккаунт {account_name}: {account.resources}")
-                    break
+            # account_name = self.account_selector.currentText()
+            # for account in resource_manager.accounts:
+            #     if account.name == account_name:
+            #         account.add_resources(resources["food"], resources["wood"], resources["stone"], resources["gold"])
+            #         print(f"Ресурсы добавлены на аккаунт {account_name}: {account.resources}")
+            #         break
         else:
             QtWidgets.QMessageBox.critical(self, "Ошибка", "Крестик не найден на скриншоте.")
 
@@ -351,8 +370,18 @@ class ResourceApp(QtWidgets.QWidget):
                     break
 
     def reset_resources(self):
-        resource_manager.reset_resources()
-        QtWidgets.QMessageBox.information(self, "Сброс", "Ресурсы сброшены!")
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "Подтверждение",
+            "Вы точно хотите сбросить ресурсы?",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No
+        )
+
+        # Если пользователь подтвердил, сбрасываем ресурсы
+        if reply == QtWidgets.QMessageBox.Yes:
+            resource_manager.reset_resources()
+            QtWidgets.QMessageBox.information(self, "Сброс", "Ресурсы сброшены!")
     def open_graphs(self):
         """
         Открывает окно с графиками ресурсов.
