@@ -9,7 +9,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 import pygetwindow as gw
 import configparser
 import os
-
+import csv_saver
 # Путь к файлу setting.ini
 SETTINGS_FILE = "setting.ini"
 
@@ -331,7 +331,7 @@ class ResourceApp(QtWidgets.QWidget):
         message = "\n".join(
             [f"{key.capitalize()}: {value / 1000000:.2f}М" for key, value in resource_manager.total_resources.items()])
         QtWidgets.QMessageBox.information(self, "Итоговые ресурсы", message)
-
+        csv_saver.save_resources_to_csv(resource_manager)
     def change_tax(self):
         account_name = self.account_selector.currentText()
         current_tax = load_tax_from_ini(account_name)
