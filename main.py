@@ -103,59 +103,74 @@ class ResourceApp(QtWidgets.QWidget):
         """)
 
         self.account_selector = QtWidgets.QComboBox(self)
-        self.account_selector.addItems(["JustKirill", "KirillFarm0", "KirillFarm1", "KirillFarm2", "KirillFarm3", "KirillFarm4" ])
+        self.account_selector.addItems(
+            ["JustKirill", "KirillFarm0", "KirillFarm1", "KirillFarm2", "KirillFarm3", "KirillFarm4"])
         self.account_selector.setStyleSheet("""
-                QComboBox {
-                    background-color: #3a3a3a;  /* Темный фон */
-                    color: #f5f5f5;             /* Белый текст */
-                    border: 2px solid #4a90e2;  /* Синяя рамка */
-                    border-radius: 8px;         /* Закругленные углы */
-                    padding: 5px;               /* Отступы */
-                    font-size: 14px;            /* Размер шрифта */
-                }
-                QComboBox::drop-down {
-                    background-color: #2a2a2a;  /* Темный фон для стрелки */
-                    border: 2px solid #4a90e2;  /* Синяя рамка */
-                    border-radius: 5px;         /* Закругленные углы */
-                    width: 20px;               /* Ширина стрелки */
-                }
-                QComboBox::down-arrow {
-                    image: url(Media/UI/down_arrow.svg);  /* Иконка стрелки */
-                    width: 10px;
-                    height: 10px;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: #3a3a3a;  /* Темный фон выпадающего списка */
-                    color: #f5f5f4;             /* Белый текст */
-                    selection-background-color: #4a90e2;  /* Синий фон выбранного элемента */
-                    selection-color: #ffffff;   /* Белый текст выбранного элемента */
-                    border: 2px solid #4a90e2;  /* Синяя рамка */
-                }
-            """)
-        self.screenshot_button = QtWidgets.QPushButton("Сделать скриншот", self)
+               QComboBox {
+                   background-color: #3a3a3a;  /* Темный фон */
+                   color: #f5f5f5;             /* Белый текст */
+                   border: 2px solid #4a90e2;  /* Синяя рамка */
+                   border-radius: 8px;         /* Закругленные углы */
+                   padding: 5px;               /* Отступы */
+                   font-size: 14px;            /* Размер шрифта */
+               }
+               QComboBox::drop-down {
+                   background-color: #2a2a2a;  /* Темный фон для стрелки */
+                   border: 2px solid #4a90e2;  /* Синяя рамка */
+                   border-radius: 5px;         /* Закругленные углы */
+                   width: 20px;               /* Ширина стрелки */
+               }
+               QComboBox::down-arrow {
+                   image: url(Media/UI/down_arrow.svg);  /* Иконка стрелки */
+                   width: 10px;
+                   height: 10px;
+               }
+               QComboBox QAbstractItemView {
+                   background-color: #3a3a3a;  /* Темный фон выпадающего списка */
+                   color: #f5f5f4;             /* Белый текст */
+                   selection-background-color: #4a90e2;  /* Синий фон выбранного элемента */
+                   selection-color: #ffffff;   /* Белый текст выбранного элемента */
+                   border: 2px solid #4a90e2;  /* Синяя рамка */
+               }
+           """)
+
+        # Кнопки
+        self.screenshot_button = QtWidgets.QPushButton(self)
+        self.screenshot_button.setIcon(QtGui.QIcon("Media/UI/screenshot.png"))
         self.screenshot_button.clicked.connect(self.take_screenshot)
 
-        self.calculate_button = QtWidgets.QPushButton("Посчитать ресурсы", self)
+        self.calculate_button = QtWidgets.QPushButton(self)
+        self.calculate_button.setIcon(QtGui.QIcon("Media/UI/calculate.png"))
         self.calculate_button.clicked.connect(self.calculate_resources)
 
-        self.tax_button = QtWidgets.QPushButton("Изменить налог", self)
+        self.tax_button = QtWidgets.QPushButton(self)
+        self.tax_button.setIcon(QtGui.QIcon("Media/UI/tax.png"))
         self.tax_button.clicked.connect(self.change_tax)
 
-        self.reset_button = QtWidgets.QPushButton("Сбросить", self)
+        self.reset_button = QtWidgets.QPushButton(self)
+        self.reset_button.setIcon(QtGui.QIcon("Media/UI/reset.png"))
         self.reset_button.clicked.connect(self.reset_resources)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.account_selector)
-        layout.addWidget(self.screenshot_button)
-        layout.addWidget(self.calculate_button)
-        layout.addWidget(self.tax_button)
-        layout.addWidget(self.reset_button)
+        # Настройка размера кнопок
+        button_size = QtCore.QSize(64, 64)  # Размер кнопок
+        for button in [self.screenshot_button, self.calculate_button, self.tax_button, self.reset_button]:
+            button.setIconSize(button_size)
+            button.setFixedSize(button_size)
+
+        # Используем QGridLayout для расположения элементов
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(self.account_selector, 0, 0, 1, 2)  # Выпадающий список на всю ширину
+        layout.addWidget(self.screenshot_button, 1, 0)
+        layout.addWidget(self.calculate_button, 1, 1)
+        layout.addWidget(self.tax_button, 2, 0)
+        layout.addWidget(self.reset_button, 2, 1)
+
         self.setLayout(layout)
 
+        # Прозрачность и закрепление окна
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setWindowOpacity(0.75)
-
     def update_position(self):
         target_windows = gw.getWindowsWithTitle(self.window_title)
         if target_windows:
